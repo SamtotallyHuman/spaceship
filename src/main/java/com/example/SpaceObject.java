@@ -83,4 +83,8 @@ public class SpaceObject extends Component {
         return acceleration;
     }
 
+    public void setStoredPosition(Point2D pos) {
+        this.position = pos;
+    }
+
 }

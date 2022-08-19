@@ -28,8 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.plaf.synth.SynthStyle;
-
 public class App extends GameApplication {
 
     private List<Entity> spaceObjects;
@@ -88,19 +86,18 @@ public class App extends GameApplication {
                 .view(new Circle(100, 100, 100, Color.RED))
                 .bbox(new HitBox(BoundingShape.circle(100)))
                 .buildAndAttach();
-        sun.addComponent(new FixedObject(1000000000, sun.getCenter()));
+        sun.addComponent(new FixedObject(2000000000, sun.getCenter()));
         allObjects.add(sun);
 
         planet1 = FXGL.entityBuilder()
                 .type(EntityType.PLANET)
-                .at(580, 610)
+                .at(1150, 100)
                 .view(new Circle(40, 40, 40, Color.GREEN))
                 .bbox(new HitBox(BoundingShape.circle(40)))
                 .buildAndAttach();
-        planet1.addComponent(new SpaceObject(planet1.getCenter(), new Point2D(20, 100), new Point2D(0, 0), 60000000));
+        planet1.addComponent(new SpaceObject(planet1.getCenter(), new Point2D(190, -70), new Point2D(10, 0), 10000000));
         spaceObjects.add(planet1);
         allObjects.add(planet1);
-
     }
 
     /* Constantly Calculates all the forces between all objects using
@@ -114,7 +111,7 @@ public class App extends GameApplication {
             for (Entity spaceObject : spaceObjects) {
                 for (Entity object : allObjects) {
     
-                    double distance = spaceObject.distance(object);
+                    double distance = object.getCenter().subtract(spaceObject.getCenter()).magnitude();
     
                     if (distance > 0.01) {
                         double m1 = spaceObject.getComponent(SpaceObject.class).getMass();
