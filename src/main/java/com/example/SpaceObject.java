@@ -65,7 +65,22 @@ public class SpaceObject extends Component {
         resultantForce = new Point2D(0, 0);
     }
 
+    public void stopAcceleration () {
+        velocity = new Point2D(0, 0);
+        acceleration = new Point2D(0, 0);
+    }
+
     public double getMass() {
         return mass;
     }
+
+    public void setAccelerationAndVelocity(Point2D accel, Point2D vel) {
+        velocity = vel;
+        acceleration = accel;
+    }
+
+    public Point2D getAcceleration() {
+        return acceleration;
+    }
+
 }

@@ -10,6 +10,12 @@ import com.almasb.fxgl.entity.Entity;
 import com.almasb.fxgl.input.Input;
 import com.almasb.fxgl.input.UserAction;
 import com.almasb.fxgl.texture.Texture;
+import com.almasb.fxgl.entity.components.CollidableComponent;
+import com.almasb.fxgl.physics.BoundingShape;
+import com.almasb.fxgl.physics.CollisionHandler;
+import com.almasb.fxgl.physics.HitBox;
+
+import static com.almasb.fxgl.dsl.FXGL.*;
 
 import javafx.geometry.Point2D;
 import javafx.scene.input.KeyCode;
@@ -29,16 +35,21 @@ public class App extends GameApplication {
     private Entity player;
     private Entity player2;
     private Entity sun;
-    private Entity sun2;
+    private Entity planet1;
 
     private static final double gravitationalConstant = 6.674e-11;
     private static final double gravityBoosterConstant = 150000000;
 
+    public enum EntityType {
+        PLAYER, SUN, PLANET
+    }
+
     @Override
     protected void initSettings(GameSettings settings) {
-        settings.setWidth(2000);
-        settings.setHeight(1000);
+        settings.setWidth(2400);
+        settings.setHeight(1300);
         settings.setTitle("Spaceship");
+        settings.setDeveloperMenuEnabled(true);
     }
 
     @Override
@@ -48,6 +59,7 @@ public class App extends GameApplication {
         allObjects = new ArrayList<>();
 
         player = FXGL.entityBuilder()
+                .type(EntityType.PLAYER)
                 .at(40, 40)
                 .viewWithBBox(new Texture(FXGL.image("Spaceship.png")))
                 .buildAndAttach();
@@ -56,29 +68,36 @@ public class App extends GameApplication {
         spaceObjects.add(player);
         allObjects.add(player);
 
-        player2 = FXGL.entityBuilder()
+        /*player2 = FXGL.entityBuilder()
+                .type(EntityType.PLAYER)
                 .at(1960, 40)
                 .viewWithBBox(new Texture(FXGL.image("Spaceship2.png")))
+                .with(new CollidableComponent(true))
                 .buildAndAttach();
         player2.addComponent(new SpaceObject(new Point2D(player.getX(), player.getY()), new Point2D(0, 0), new Point2D(0, 0), 300));
         player2.setRotationOrigin(new Point2D(player.getWidth()/2, player.getHeight()/2));
         spaceObjects.add(player2);
-        allObjects.add(player2);
+        allObjects.add(player2);*/
 
 
         sun = FXGL.entityBuilder()
-                .at(500, 500)
-                .viewWithBBox(new Circle(60, Color.RED))
+                .type(EntityType.SUN)
+                .at(1150, 550)
+                .view(new Circle(100, 100, 100, Color.RED))
+                .bbox(new HitBox(BoundingShape.circle(100)))
                 .buildAndAttach();
         sun.addComponent(new FixedObject(1000000000, new Point2D(sun.getX(), sun.getY())));
         allObjects.add(sun);
 
-        sun2 = FXGL.entityBuilder()
-                .at(1500, 500)
-                .viewWithBBox(new Circle(60, Color.RED))
+        planet1 = FXGL.entityBuilder()
+                .type(EntityType.PLANET)
+                .at(580, 630)
+                .view(new Circle(40, 40, 40, Color.GREEN))
+                .bbox(new HitBox(BoundingShape.circle(40)))
                 .buildAndAttach();
-        sun2.addComponent(new FixedObject(1000000000, new Point2D(sun2.getX(), sun2.getY())));
-        allObjects.add(sun2);
+        planet1.addComponent(new SpaceObject(new Point2D(planet1.getX(), planet1.getY()), new Point2D(0, 129), new Point2D(0, 0), 6000000));
+        spaceObjects.add(planet1);
+        allObjects.add(planet1);
 
     }
 
@@ -89,53 +108,98 @@ public class App extends GameApplication {
     */
     @Override
     protected void onUpdate(double tpf) {
-        
-        for (Entity spaceObject : spaceObjects) {
-            for (Entity object : allObjects) {
+        System.out.println(sun.distance(planet1));
+        if (!spaceObjects.isEmpty()) {
+            for (Entity spaceObject : spaceObjects) {
+                for (Entity object : allObjects) {
+    
+                    double distance = spaceObject.distance(object);
+    
+                    if (distance > 0.01) {
+                        double m1 = spaceObject.getComponent(SpaceObject.class).getMass();
+                        double m2 =  object.call("getMass");
+    
+                        double force = (gravityBoosterConstant * gravitationalConstant * m1 * m2)/Math.pow(distance, 2);
 
-                double distance = FXGLMath.sqrt(Math.pow(spaceObject.getX()-object.getX(), 2) + Math.pow(spaceObject.getY()-object.getY(), 2));
+                        spaceObject.getComponent(SpaceObject.class).addForce(force, object.getCenter().subtract(spaceObject.getCenter()));
+                        
+                        Point2D vector = object.getCenter().subtract(spaceObject.getCenter());
+                        
+                        double threshold = spaceObject.getWidth()/2 + object.getWidth()/2;
 
-                if (distance > 0.01) {
-                    double m1 = spaceObject.getComponent(SpaceObject.class).getMass();
-                    double m2 =  object.call("getMass");
+                        if (vector.magnitude() == threshold) {// psuedo collision handling
 
-                    double force = (gravityBoosterConstant * gravitationalConstant * m1 * m2)/Math.pow(distance, 2);
-                    
-                    spaceObject.getComponent(SpaceObject.class).addForce(force, new Point2D(object.getX()-spaceObject.getX(), object.getY()-spaceObject.getY()));
+                            if (spaceObject.hasComponent(SpaceObject.class) && object.hasComponent(SpaceObject.class)) {
+                                if (spaceObject.getComponent(SpaceObject.class).getMass() > object.getComponent(SpaceObject.class).getMass()) {
+                                    object.getComponent(SpaceObject.class).setAccelerationAndVelocity(spaceObject.getComponent(SpaceObject.class).getAcceleration(), spaceObject.getComponent(SpaceObject.class).getVelocity());
+                                } else {
+                                    spaceObject.getComponent(SpaceObject.class).setAccelerationAndVelocity(object.getComponent(SpaceObject.class).getAcceleration(), object.getComponent(SpaceObject.class).getVelocity());
+                                }
+                            } else {
+                                spaceObject.getComponent(SpaceObject.class).stopAcceleration();
+                            }
+                            
+                            spaceObject.getComponent(SpaceObject.class).addForce(force, (object.getCenter().subtract(spaceObject.getCenter())).multiply(-1));
+                        
+                        } else if (vector.magnitude() < threshold) {
+
+                            if (spaceObject.hasComponent(SpaceObject.class) && object.hasComponent(SpaceObject.class)) {
+                                if (spaceObject.getComponent(SpaceObject.class).getMass() > object.getComponent(SpaceObject.class).getMass()) {
+                                    object.getComponent(SpaceObject.class).setAccelerationAndVelocity(spaceObject.getComponent(SpaceObject.class).getAcceleration(), spaceObject.getComponent(SpaceObject.class).getVelocity());
+                                } else {
+                                    spaceObject.getComponent(SpaceObject.class).setAccelerationAndVelocity(object.getComponent(SpaceObject.class).getAcceleration(), object.getComponent(SpaceObject.class).getVelocity());
+                                }
+                            } else {
+                                spaceObject.getComponent(SpaceObject.class).stopAcceleration();
+                            }
+
+                            spaceObject.getComponent(SpaceObject.class).addForce(force * threshold/vector.magnitude(), (object.getCenter().subtract(spaceObject.getCenter())).multiply(-1)); 
+                        
+                        }
+
+                    }
                 }
+                spaceObject.getComponent(SpaceObject.class).calculateAcceleration();
             }
-            spaceObject.getComponent(SpaceObject.class).calculateAcceleration();
         }
-
-        System.out.println(player.getComponent(SpaceObject.class).getVelocity());
     }
 
     @Override
     protected void initInput() {
 
         FXGL.onKey(KeyCode.W, () -> {
-            player.getComponent(SpaceObject.class).addForwardVelocity(3);
+            if(spaceObjects.contains(player)) {
+                player.getComponent(SpaceObject.class).addForwardVelocity(3);
+            }
         });
 
         FXGL.onKey(KeyCode.S, () -> {
-            player.getComponent(SpaceObject.class).addForwardVelocity(-3);
+            if(spaceObjects.contains(player)) {
+                player.getComponent(SpaceObject.class).addForwardVelocity(-3);
+            }
         });
 
         FXGL.onKey(KeyCode.A, () -> {
-            player.rotateBy(-FXGLMath.PI/1.5);
+            if(spaceObjects.contains(player)) {
+                player.rotateBy(-FXGLMath.PI/1.5);
+            }
         });
 
         FXGL.onKey(KeyCode.D, () -> {
-            player.rotateBy(FXGLMath.PI/1.5);
+            if(spaceObjects.contains(player)) {
+                player.rotateBy(FXGLMath.PI/1.5);
+            }
         });
 
         FXGL.onKey(KeyCode.SPACE, () -> {
-            player.getComponent(SpaceObject.class).autoBreak();
+            if(spaceObjects.contains(player)) {
+                player.getComponent(SpaceObject.class).autoBreak();
+            }
         });
 
 
 
-        FXGL.onKey(KeyCode.UP, () -> {
+        /*FXGL.onKey(KeyCode.UP, () -> {
             player2.getComponent(SpaceObject.class).addForwardVelocity(3);
         });
 
@@ -153,7 +217,7 @@ public class App extends GameApplication {
 
         FXGL.onKey(KeyCode.NUMPAD0, () -> {
             player2.getComponent(SpaceObject.class).autoBreak();
-        });
+        });*/
 
     }
 
