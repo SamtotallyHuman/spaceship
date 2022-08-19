@@ -55,6 +55,8 @@ public class App extends GameApplication {
     @Override
     protected void initGame() {
 
+        FXGL.getGameScene().setBackgroundColor(Color.BLACK);
+
         spaceObjects = new ArrayList<>();
         allObjects = new ArrayList<>();
 
@@ -68,16 +70,15 @@ public class App extends GameApplication {
         spaceObjects.add(player);
         allObjects.add(player);
 
-        /*player2 = FXGL.entityBuilder()
+        player2 = FXGL.entityBuilder()
                 .type(EntityType.PLAYER)
                 .at(1960, 40)
                 .viewWithBBox(new Texture(FXGL.image("Spaceship2.png")))
-                .with(new CollidableComponent(true))
                 .buildAndAttach();
-        player2.addComponent(new SpaceObject(new Point2D(player.getX(), player.getY()), new Point2D(0, 0), new Point2D(0, 0), 300));
-        player2.setRotationOrigin(new Point2D(player.getWidth()/2, player.getHeight()/2));
+        player2.addComponent(new SpaceObject(new Point2D(player2.getX(), player2.getY()), new Point2D(0, 0), new Point2D(0, 0), 300));
+        player2.setRotationOrigin(new Point2D(player2.getWidth()/2, player2.getHeight()/2));
         spaceObjects.add(player2);
-        allObjects.add(player2);*/
+        allObjects.add(player2);
 
 
         sun = FXGL.entityBuilder()
@@ -195,9 +196,15 @@ public class App extends GameApplication {
             }
         });
 
+        FXGL.onKey(KeyCode.R, () -> {
+            if(spaceObjects.contains(player)) {
+                player.getComponent(SpaceObject.class).setStoredPosition(new Point2D(40, 40));
+                player.getComponent(SpaceObject.class).setAccelerationAndVelocity(new Point2D(0, 0), new Point2D(0, 0));
+            }
+        });
 
 
-        /*FXGL.onKey(KeyCode.UP, () -> {
+        FXGL.onKey(KeyCode.UP, () -> {
             player2.getComponent(SpaceObject.class).addForwardVelocity(3);
         });
 
@@ -215,7 +222,14 @@ public class App extends GameApplication {
 
         FXGL.onKey(KeyCode.NUMPAD0, () -> {
             player2.getComponent(SpaceObject.class).autoBreak();
-        });*/
+        });
+
+        FXGL.onKey(KeyCode.NUMPAD3, () -> {
+            if(spaceObjects.contains(player2)) {
+                player2.getComponent(SpaceObject.class).setStoredPosition(new Point2D(1960, 40));
+                player2.getComponent(SpaceObject.class).setAccelerationAndVelocity(new Point2D(0, 0), new Point2D(0, 0));
+            }
+        });
 
     }
 
