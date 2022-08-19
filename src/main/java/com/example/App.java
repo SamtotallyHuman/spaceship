@@ -28,6 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.plaf.synth.SynthStyle;
+
 public class App extends GameApplication {
 
     private List<Entity> spaceObjects;
@@ -86,16 +88,16 @@ public class App extends GameApplication {
                 .view(new Circle(100, 100, 100, Color.RED))
                 .bbox(new HitBox(BoundingShape.circle(100)))
                 .buildAndAttach();
-        sun.addComponent(new FixedObject(1000000000, new Point2D(sun.getX(), sun.getY())));
+        sun.addComponent(new FixedObject(1000000000, sun.getCenter()));
         allObjects.add(sun);
 
         planet1 = FXGL.entityBuilder()
                 .type(EntityType.PLANET)
-                .at(580, 630)
+                .at(580, 610)
                 .view(new Circle(40, 40, 40, Color.GREEN))
                 .bbox(new HitBox(BoundingShape.circle(40)))
                 .buildAndAttach();
-        planet1.addComponent(new SpaceObject(new Point2D(planet1.getX(), planet1.getY()), new Point2D(0, 129), new Point2D(0, 0), 6000000));
+        planet1.addComponent(new SpaceObject(planet1.getCenter(), new Point2D(20, 100), new Point2D(0, 0), 60000000));
         spaceObjects.add(planet1);
         allObjects.add(planet1);
 
@@ -108,7 +110,6 @@ public class App extends GameApplication {
     */
     @Override
     protected void onUpdate(double tpf) {
-        System.out.println(sun.distance(planet1));
         if (!spaceObjects.isEmpty()) {
             for (Entity spaceObject : spaceObjects) {
                 for (Entity object : allObjects) {
