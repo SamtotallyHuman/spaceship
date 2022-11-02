@@ -48,14 +48,24 @@ public class App extends GameApplication {
     protected void initSettings(GameSettings settings) {
         settings.setWidth(2400);
         settings.setHeight(1300);
+        settings.setScaleAffectedOnResize(true);
+        settings.setGameMenuEnabled(false);
+        settings.setManualResizeEnabled(true);
+        settings.setFullScreenAllowed(true);
         settings.setTitle("Spaceship");
-        settings.setDeveloperMenuEnabled(true);
+        settings.setFullScreenFromStart(true);
+        settings.setMainMenuEnabled(false);
     }
 
     @Override
     protected void initGame() {
 
         FXGL.getGameScene().setBackgroundColor(Color.BLACK);
+
+        double height = FXGL.getAppHeight();
+        double width = FXGL.getAppWidth();
+
+        System.out.println(height);
 
         spaceObjects = new ArrayList<>();
         allObjects = new ArrayList<>();
@@ -72,7 +82,7 @@ public class App extends GameApplication {
 
         player2 = FXGL.entityBuilder()
                 .type(EntityType.PLAYER)
-                .at(1960, 40)
+                .at((width-40), 40)
                 .viewWithBBox(new Texture(FXGL.image("Spaceship2.png")))
                 .buildAndAttach();
         player2.addComponent(new SpaceObject(new Point2D(player2.getX(), player2.getY()), new Point2D(0, 0), new Point2D(0, 0), 300));
@@ -83,7 +93,7 @@ public class App extends GameApplication {
 
         sun = FXGL.entityBuilder()
                 .type(EntityType.SUN)
-                .at(1150, 550)
+                .at((width/2)-100, (height/2)-100)
                 .view(new Circle(100, 100, 100, Color.RED))
                 .bbox(new HitBox(BoundingShape.circle(100)))
                 .buildAndAttach();
@@ -92,11 +102,11 @@ public class App extends GameApplication {
 
         planet1 = FXGL.entityBuilder()
                 .type(EntityType.PLANET)
-                .at(1150, 100)
+                .at((width/2)-40, 100)
                 .view(new Circle(40, 40, 40, Color.GREEN))
                 .bbox(new HitBox(BoundingShape.circle(40)))
                 .buildAndAttach();
-        planet1.addComponent(new SpaceObject(planet1.getCenter(), new Point2D(190, -70), new Point2D(10, 0), 10000000));
+        planet1.addComponent(new SpaceObject(planet1.getCenter(), new Point2D(Math.sqrt(2000000000*0.010011/((height/2)-200)), 0), new Point2D(0, 0), 10000000));
         spaceObjects.add(planet1);
         allObjects.add(planet1);
     }
@@ -159,6 +169,12 @@ public class App extends GameApplication {
                     }
                 }
                 spaceObject.getComponent(SpaceObject.class).calculateAcceleration();
+                if ((-20 <= spaceObject.getX() && spaceObject.getX() <= FXGL.getAppWidth()) || 
+                    (-20 <= spaceObject.getY() && spaceObject.getY() <= FXGL.getAppHeight())) {
+                    spaceObject.getComponent(SpaceObject.class).setStoredPosition(new Point2D(
+                        (spaceObject.getX()+FXGL.getAppWidth()) % FXGL.getAppWidth(), (spaceObject.getY()+FXGL.getAppHeight()) % FXGL.getAppHeight()));
+       
+                }
             }
         }
     }
@@ -190,7 +206,7 @@ public class App extends GameApplication {
             }
         });
 
-        FXGL.onKey(KeyCode.SPACE, () -> {
+        FXGL.onKey(KeyCode.DIGIT1, () -> {
             if(spaceObjects.contains(player)) {
                 player.getComponent(SpaceObject.class).autoBreak();
             }
@@ -220,11 +236,11 @@ public class App extends GameApplication {
             player2.rotateBy(FXGLMath.PI/1.5);
         });
 
-        FXGL.onKey(KeyCode.NUMPAD0, () -> {
+        FXGL.onKey(KeyCode.SLASH, () -> {
             player2.getComponent(SpaceObject.class).autoBreak();
         });
 
-        FXGL.onKey(KeyCode.NUMPAD3, () -> {
+        FXGL.onKey(KeyCode.DIGIT0, () -> {
             if(spaceObjects.contains(player2)) {
                 player2.getComponent(SpaceObject.class).setStoredPosition(new Point2D(1960, 40));
                 player2.getComponent(SpaceObject.class).setAccelerationAndVelocity(new Point2D(0, 0), new Point2D(0, 0));
